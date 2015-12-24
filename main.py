@@ -2,68 +2,83 @@ import numpy as np
 import random
 import sklearn
 from sklearn.datasets.samples_generator import make_regression
-from pylab import *
-from scipy import *
+import pylab
+from scipy import stats
+import pandas as pd
 
-def gradient_decent(alpha, x, y, ep = 0.0001, max_iter = 10000):
+def gradient_descent(alpha, x, y, ep=0.0001, max_iter=100000):
     converged = False
-    itr = 0;
-    m = x.shape[0]
+    iter = 0
+    m = len(x)# number of samples
 
-    # Choose initial thetas to be random
-    t0 = np.random.random(x.shape[1])
-    t1 = np.random.random(x.shape[1])
+    # initial theta
+    t0 = 10
+    t1 = 10
+    # t0 = np.random.random(x.shape[1])
+    # t1 = np.random.random(x.shape[1])
 
-    # total error using Squared Error Model
-    J = sum([(t0 + t1 * x[i] - y[i])**2 for i in range(m)])
+    # total error, J(theta)
+    J = sum([(t0 + t1*x[i] - y[i])**2 for i in range(m)])
 
-    # Determine optimal thetas
+    # Iterate Loop
     while not converged:
-        # for each training sample calulate the gradient
-        grad0 = 1.0/m * sum([(t0 + t1 * x[i] - y[i]) for i in range(m)])
-        grad1 = 1.0/m * sum([(t0 + t1 * x[i] - y[i]) * x[i] for i in range(m)])
+        # for each training sample, compute the gradient (d/d_theta j(theta))
+        grad0 = 1.0/m * sum([(t0 + t1*x[i] - y[i]) for i in range(m)])
+        grad1 = 1.0/m * sum([(t0 + t1*x[i] - y[i])*x[i] for i in range(m)])
 
-        # calulate new thetas
-        tmp0 = t0 - alpha * grad0
-        tmp1 = t1 - alpha * grad1
+        # update the theta_temp
+        temp0 = t0 - alpha * grad0
+        temp1 = t1 - alpha * grad1
 
-        # update the thetas
-        t0 = tmp0
-        t1 = tmp1
+        # update theta
+        t0 = temp0
+        t1 = temp1
 
-        # Compute the mean squared error
-        e = sum([(t0 + t1 * x[i] - y[i])**2 for i in range(m)])
+        # mean squared error
+        e = sum( [ (t0 + t1*x[i] - y[i])**2 for i in range(m)] )
 
-        if abs(J - e) <= ep:
-            print "Convered, iterations: ", itr
+        if abs(J-e) <= ep:
+            print 'Converged, iterations: ', iter
             converged = True
 
-        J = e # update the error value
-        itr += 1
+        J = e   # update error
+        iter += 1  # update iter
 
-        if itr == max_iter:
-            print "Max iterations reached"
+        if iter == max_iter:
+            print 'Max interactions exceeded!'
             converged = True
 
-    return t0, t1
+    return t0,t1
 
-if __name__ == "__main__":
-    # Create sample regression data
-    x, y = make_regression(n_samples = 500, n_features = 1, n_informative = 1, random_state = 0, noise = 35)
-    print "x.shape = %s y.shape = %s" %(x.shape, y.shape)
+if __name__ == '__main__':
 
-    alpha = 0.01 # learning rate
+    train = pd.read_csv("chirpsData.csv", header = 0, delimiter = ",", quoting = 2)
+
+    dataSize = train["A"].size
+    x = []
+    y = []
+    for i in range(dataSize):
+        x.append(train["A"][i])
+        y.append(train["B"][i])
+
+    print "Data Size: ", dataSize
+
+    nx = np.asarray(x)
+    ny = np.asarray(y)
+
+    alpha = 0.001 # learning rate
     ep = 0.01 # convergence criteria
 
-    # call the gradient decent function to determine the optimum theta_0 and theta_1 values
-    theta_0, theta_1 = gradient_decent(alpha, x, y, ep, max_iter = 1000)
-    print "theta_0 = %s, theta_1 = %s" %(theta_0, theta_1)
+    # call gredient decent, and get intercept(=theta0) and slope(=theta1)
+    theta0, theta1 = gradient_descent(alpha, nx, ny, ep, max_iter=1000)
+    print ('theta0 = %s theta1 = %s') %(theta0, theta1)
+
 
     # plot
-    for i in range(x.shape[0]):
-        y_predict = theta_0 + theta_1 * x
+    for i in range(len(nx)):
+        y_predict = theta0 + theta1*nx
 
-    plot(x, y, 'o')
-    plot(x, y_predict, 'k-')
-    show()
+    pylab.plot(x,y,'o')
+    pylab.plot(x,y_predict,'k-')
+    pylab.show()
     print "Done!"
